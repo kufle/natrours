@@ -1,9 +1,9 @@
-const fs = require('fs');
+const AppError = require('../utils/appError');
 //const tours = JSON.parse(fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`));
 
 const Tour = require('../models/tourModel');
 
-const getAllTour = async (req, res) => {
+const getAllTour = async (req, res, next) => {
     try {
         const queryObj = {...req.query};
         const excludeFields = ['page','sort','limit', 'fields'];
@@ -48,33 +48,31 @@ const getAllTour = async (req, res) => {
                 tours
             }
         });
-    } catch (err) {
-        return res.status(400).json({
-            status: 'fail',
-            message: err
-        });
+    } catch (error) {
+        //status code dan json error nya ada di middleware app.js
+        next(error);
     }
 }
 
-const getTour = async (req, res) => {
+const getTour = async (req, res, next) => {
     try {
         const tour = await Tour.findById(req.params.id);
-    
+        if(!tour) {
+            return next(new AppError('no tour found', 404));
+        }
         res.status(200).json({
             'status': 'success',
             'data': {
                 tour
             }
         });
-    } catch (err) {
-        res.status(400).json({
-            status: 'fail',
-            message: err
-        });
+    } catch (error) {
+        //status code dan json error nya ada di middleware app.js
+        next(error);
     }
 }
 
-const createTour = async (req, res) => {
+const createTour = async (req, res, next) => {
     try {
         const payload = req.body;
         const newTour = new Tour(payload);
@@ -87,14 +85,15 @@ const createTour = async (req, res) => {
             }
         });
     } catch (error) {
-        return res.status(400).json({
-            status: 'fail',
-            message: error
-        });
+        // return res.status(400).json({
+        //     status: 'fail',
+        //     message: error
+        // });
+        next(error);
     }
 }
 
-const updateTour = async (req, res) => {
+const updateTour = async (req, res, next) => {
     try {
         const payload = req.body;
         //Object new true ini fungsinya untuk mengembalikan data terbaru yang sudah di update
@@ -106,15 +105,12 @@ const updateTour = async (req, res) => {
                 tour
             }
         });
-    } catch (err) {
-        return res.status(400).json({
-            status: 'fail',
-            message: err
-        });
+    } catch (error) {
+        next(error)
     }
 };
 
-const deleteTour = async (req, res) => {
+const deleteTour = async (req, res, next) => {
     try {
         await Tour.findByIdAndDelete(req.params.id);
 
@@ -122,15 +118,15 @@ const deleteTour = async (req, res) => {
             status: 'success',
             message: 'Tour deleted'
         });
-    } catch (err) {
+    } catch (error) {
         return res.status(400).json({
             status: 'fail',
-            message: err
+            message: error
         });
     }
 }
 
-const getTourStats = async (req, res) => {
+const getTourStats = async (req, res, next) => {
     try {
         const stats = await Tour.aggregate([
             {
@@ -138,7 +134,7 @@ const getTourStats = async (req, res) => {
             },
             {
                 $group: {
-                    _id: null,
+                    _id: '$difficulty' ,
                     numTours: { $sum: 1 },
                     numRatings: { $sum: '$ratingsQuantity' },
                     avgRating: { $avg: '$ratingsAverage'},
@@ -156,15 +152,13 @@ const getTourStats = async (req, res) => {
                 stats
             }
         });
-    } catch (err) {
-        return res.status(400).json({
-            status: 'fail',
-            message: err
-        });
+    } catch (error) {
+        //status code dan json error nya ada di middleware app.js
+        next(error);
     }
 }
 
-const getMonthlyPlan = async (req, res) => {
+const getMonthlyPlan = async (req, res, next) => {
     try {
         const year = parseInt(req.params.year);
         const plan = await Tour.aggregate([
@@ -208,11 +202,9 @@ const getMonthlyPlan = async (req, res) => {
                 plan
             }
         });
-    } catch (err) {
-        return res.status(400).json({
-            status: 'fail',
-            message: err
-        });
+    } catch (error) {
+        //status code dan json error nya ada di middleware app.js
+        next(error);
     }
 }
 //Middleware
@@ -224,13 +216,11 @@ const aliasTopTours = (req, res, next) => {
     next();
 }
 
-const checkID = (req, res, next, val) => {
-    //id nya di kali satu biar nilai nya jadi integer
-    if(req.params.id * 1 > tours.length) {
-        return res.status(404).json({
-            'status': 'fail',
-            'message': 'Not Found'
-        });
+const checkID = (req, res, next) => {
+    //jika Id nya bukan bertype ObjectId nya mongodb maka tampilkan error
+    console.log(2112121);
+    if (!req.params.id.match(/^[0-9a-fA-F]{24}$/)) {
+        next();
     }
 
     next();

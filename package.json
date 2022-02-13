@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "nodemon server.js",
-    "start:prod": "NODE_ENV=production nodemon server.js"
+    "start:prod": "NODE_ENV=production nodemon server.js",
+    "debug": "ndb server.js"
   },
   "author": "irawan",
   "license": "ISC",
@@ -14,7 +15,8 @@
     "eslint": "^8.8.0",
     "express": "^4.17.2",
     "mongoose": "^5.13.14",
-    "morgan": "^1.10.0"
+    "morgan": "^1.10.0",
+    "slugify": "^1.6.5"
   },
   "devDependencies": {
     "eslint-config-airbnb": "^19.0.4",

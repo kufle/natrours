@@ -37,12 +37,16 @@ const handleDuplicateFieldsDB = err => {
 }
 
 const handleValidationErrorDB = err => {
-    console.log(1243);
     //object.values fungsinya untuk mengambil isi dari object , dan mengembalikan nilai nya menjadi array
     //contoh const obj = { foo: 'bar', baz: 42 }; Object.values(obj) hasilnya ['bar', 42]
     let error = Object.values(err.errors).map(el => el.message);
     const message = `Ivalid Input data. ${error.join('. ')}`;
     return new AppError(message, 400);
+}
+
+const handleJsonWebTokenError = err => {
+    const message = `Invalid token. please login again`;
+    return new AppError(message, 401);
 }
 
 module.exports = (err, req, res, next) => {
@@ -59,6 +63,7 @@ module.exports = (err, req, res, next) => {
         if(err.name === 'CastError') error = handleCastErrorDB(error);
         if(err.code === 11000) error = handleDuplicateFieldsDB(error);
         if(err.name === 'ValidationError') error = handleValidationErrorDB(error);
+        if(err.name === 'JsonWebTokenError') error = handleJsonWebTokenError(error);
 
         sendErrorProd(error, res);
     }
